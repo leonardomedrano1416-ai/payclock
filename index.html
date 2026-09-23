@@ -1,568 +1,722 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#111827">
-  <title>PayClock</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#111827">
+<title>PayClock</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+* { box-sizing:border-box; }
 
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f3f4f6;
-      color: #111827;
-    }
+body {
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#f3f4f6;
+  color:#111827;
+}
 
-    .app {
-      max-width: 520px;
-      margin: auto;
-      min-height: 100vh;
-      padding: 24px 18px 100px;
-    }
+.app {
+  max-width:520px;
+  margin:auto;
+  min-height:100vh;
+  padding:24px 18px 110px;
+}
 
-    h1 {
-      margin: 0;
-      font-size: 32px;
-    }
+h1 { margin:0; font-size:32px; }
+.subtitle { color:#6b7280; margin:4px 0 22px; }
 
-    .subtitle {
-      color: #6b7280;
-      margin-top: 4px;
-      margin-bottom: 24px;
-    }
+.card {
+  background:white;
+  border-radius:22px;
+  padding:20px;
+  margin-bottom:16px;
+  box-shadow:0 5px 20px rgba(0,0,0,.06);
+}
 
-    .card {
-      background: white;
-      border-radius: 22px;
-      padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: 0 5px 20px rgba(0,0,0,.06);
-    }
+.label {
+  font-size:12px;
+  font-weight:700;
+  color:#6b7280;
+  letter-spacing:1px;
+}
 
-    .label {
-      font-size: 12px;
-      font-weight: 700;
-      color: #6b7280;
-      letter-spacing: 1px;
-    }
+.period {
+  font-size:18px;
+  font-weight:700;
+  margin-top:5px;
+}
 
-    .period {
-      font-size: 18px;
-      font-weight: 700;
-      margin-top: 5px;
-    }
+.big-number {
+  font-size:40px;
+  font-weight:800;
+  margin-top:7px;
+}
 
-    .big-number {
-      font-size: 42px;
-      font-weight: 800;
-      margin: 8px 0 0;
-    }
+.green { color:#16803c; }
 
-    .green {
-      color: #16803c;
-    }
+.stats {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:17px;
+}
 
-    .stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 18px;
-    }
+.stat {
+  background:#f8fafc;
+  border-radius:16px;
+  padding:14px;
+}
 
-    .stat {
-      background: #f8fafc;
-      border-radius: 16px;
-      padding: 14px;
-    }
+.stat-name { font-size:12px; color:#6b7280; }
+.stat-value { font-size:19px; font-weight:750; margin-top:4px; }
 
-    .stat-name {
-      font-size: 12px;
-      color: #6b7280;
-    }
+.progress-bg {
+  height:12px;
+  background:#e5e7eb;
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:10px;
+}
 
-    .stat-value {
-      font-size: 20px;
-      font-weight: 750;
-      margin-top: 3px;
-    }
+.progress-bar {
+  height:100%;
+  width:0%;
+  background:#16803c;
+  transition:width .3s;
+}
 
-    .clock-status {
-      text-align: center;
-      margin-bottom: 14px;
-      color: #6b7280;
-    }
+.progress-text {
+  display:flex;
+  justify-content:space-between;
+  margin-top:7px;
+  font-size:12px;
+  color:#6b7280;
+}
 
-    .clock-status.active {
-      color: #16803c;
-      font-weight: 700;
-    }
+.clock-status {
+  text-align:center;
+  margin:18px 0 13px;
+  color:#6b7280;
+}
 
-    .clock-button {
-      width: 100%;
-      border: none;
-      border-radius: 18px;
-      padding: 19px;
-      font-size: 18px;
-      font-weight: 800;
-      cursor: pointer;
-      background: #111827;
-      color: white;
-    }
+.clock-status.active {
+  color:#16803c;
+  font-weight:700;
+}
 
-    .clock-button.out {
-      background: #b91c1c;
-    }
+.clock-button {
+  width:100%;
+  border:0;
+  border-radius:18px;
+  padding:19px;
+  font-size:18px;
+  font-weight:800;
+  cursor:pointer;
+  background:#111827;
+  color:white;
+}
 
-    .secondary-button {
-      width: 100%;
-      border: 1px solid #d1d5db;
-      background: white;
-      padding: 14px;
-      border-radius: 14px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 10px;
-    }
+.clock-button.out { background:#b91c1c; }
 
-    .shift {
-      padding: 13px 0;
-      border-bottom: 1px solid #eee;
-    }
+.secondary-button {
+  width:100%;
+  border:1px solid #d1d5db;
+  background:white;
+  padding:14px;
+  border-radius:14px;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  margin-top:10px;
+}
 
-    .shift:last-child {
-      border-bottom: none;
-    }
+.shift {
+  padding:14px 0;
+  border-bottom:1px solid #eee;
+}
 
-    .shift-top {
-      display: flex;
-      justify-content: space-between;
-      font-weight: 700;
-    }
+.shift:last-child { border-bottom:none; }
 
-    .shift-time {
-      color: #6b7280;
-      font-size: 14px;
-      margin-top: 3px;
-    }
+.shift-top {
+  display:flex;
+  justify-content:space-between;
+  font-weight:700;
+}
 
-    .empty {
-      color: #6b7280;
-      text-align: center;
-      padding: 12px;
-    }
+.shift-time {
+  color:#6b7280;
+  font-size:14px;
+  margin-top:4px;
+}
 
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.45);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      z-index: 10;
-    }
+.actions {
+  margin-top:8px;
+  display:flex;
+  gap:14px;
+}
 
-    .modal.show {
-      display: flex;
-    }
+.action {
+  border:0;
+  padding:0;
+  background:none;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+}
 
-    .modal-box {
-      background: white;
-      width: 100%;
-      max-width: 480px;
-      border-radius: 22px;
-      padding: 22px;
-    }
+.edit { color:#2563eb; }
+.delete { color:#b91c1c; }
 
-    .modal-box h2 {
-      margin-top: 0;
-    }
+.note {
+  font-size:12px;
+  color:#6b7280;
+  margin-top:10px;
+  line-height:1.4;
+}
 
-    input {
-      width: 100%;
-      padding: 13px;
-      margin: 6px 0 13px;
-      border: 1px solid #d1d5db;
-      border-radius: 12px;
-      font-size: 16px;
-    }
+.empty {
+  text-align:center;
+  color:#6b7280;
+  padding:16px;
+}
 
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-    }
+.tabs {
+  display:flex;
+  gap:8px;
+  margin-bottom:16px;
+}
 
-    .modal-actions button {
-      flex: 1;
-    }
+.tab {
+  flex:1;
+  border:0;
+  padding:11px 5px;
+  border-radius:12px;
+  background:#e5e7eb;
+  font-weight:700;
+  cursor:pointer;
+}
 
-    .note {
-      font-size: 12px;
-      color: #6b7280;
-      margin-top: 12px;
-      line-height: 1.4;
-    }
-  </style>
+.tab.active {
+  background:#111827;
+  color:white;
+}
+
+.page { display:none; }
+.page.active { display:block; }
+
+.history-card {
+  border-bottom:1px solid #eee;
+  padding:14px 0;
+}
+
+.history-card:last-child { border-bottom:0; }
+
+.history-title {
+  font-weight:750;
+  font-size:16px;
+}
+
+.history-details {
+  color:#6b7280;
+  margin-top:5px;
+  font-size:14px;
+}
+
+input {
+  width:100%;
+  padding:13px;
+  margin:6px 0 14px;
+  border:1px solid #d1d5db;
+  border-radius:12px;
+  font-size:16px;
+}
+
+.modal {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  z-index:20;
+}
+
+.modal.show { display:flex; }
+
+.modal-box {
+  background:white;
+  width:100%;
+  max-width:480px;
+  border-radius:22px;
+  padding:22px;
+}
+
+.modal-box h2 { margin-top:0; }
+
+.modal-actions {
+  display:flex;
+  gap:10px;
+}
+
+.modal-actions button { flex:1; }
+
+.setting-label {
+  font-size:14px;
+  font-weight:700;
+  margin-top:6px;
+}
+
+.success {
+  background:#dcfce7;
+  color:#166534;
+  border-radius:12px;
+  padding:11px;
+  display:none;
+  margin-bottom:14px;
+  font-size:14px;
+}
+</style>
 </head>
 
 <body>
 
 <div class="app">
 
-  <h1>PayClock</h1>
-  <div class="subtitle">$25.50/hr • Estimated take-home tracker</div>
+<h1>PayClock</h1>
+<div class="subtitle" id="subtitle"></div>
 
-  <div class="card">
-    <div class="label">CURRENT PAY PERIOD</div>
-    <div class="period" id="periodText"></div>
+<div class="tabs">
+  <button class="tab active" onclick="showPage('home',this)">Home</button>
+  <button class="tab" onclick="showPage('history',this)">History</button>
+  <button class="tab" onclick="showPage('settings',this)">Settings</button>
+</div>
 
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-name">Hours worked</div>
-        <div class="stat-value" id="periodHours">0h 00m</div>
-      </div>
 
-      <div class="stat">
-        <div class="stat-name">Gross earned</div>
-        <div class="stat-value" id="grossPay">$0.00</div>
-      </div>
+<!-- HOME -->
+
+<div class="page active" id="home">
+
+<div class="card">
+  <div class="label">CURRENT PAY PERIOD</div>
+  <div class="period" id="periodText"></div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-name">Total hours</div>
+      <div class="stat-value" id="periodHours">0h 00m</div>
     </div>
 
-    <div style="margin-top:20px">
-      <div class="label">ESTIMATED TAKE-HOME</div>
-      <div class="big-number green" id="netPay">$0.00</div>
-      <div class="note">
-        Based on an estimated 19% deduction rate. This is an estimate, not your actual payroll calculation.
-      </div>
+    <div class="stat">
+      <div class="stat-name">Gross earned</div>
+      <div class="stat-value" id="grossPay">$0.00</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-name">Regular hours</div>
+      <div class="stat-value" id="regularHours">0h 00m</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-name">Overtime hours</div>
+      <div class="stat-value" id="overtimeHours">0h 00m</div>
     </div>
   </div>
 
-  <div class="card">
+  <div style="margin-top:20px">
+    <div class="label">80-HOUR PROGRESS</div>
 
-    <div class="label">TODAY</div>
-
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-name">Time</div>
-        <div class="stat-value" id="todayHours">0h 00m</div>
-      </div>
-
-      <div class="stat">
-        <div class="stat-name">Gross earned</div>
-        <div class="stat-value" id="todayPay">$0.00</div>
-      </div>
+    <div class="progress-bg">
+      <div class="progress-bar" id="progressBar"></div>
     </div>
 
-    <div style="margin-top:20px">
-      <div class="clock-status" id="clockStatus">You're clocked out</div>
+    <div class="progress-text">
+      <span id="progressHours">0 / 80 hrs</span>
+      <span id="progressPercent">0%</span>
+    </div>
+  </div>
 
-      <button
-        class="clock-button"
-        id="clockButton"
-        onclick="toggleClock()">
-        CLOCK IN
-      </button>
+  <div style="margin-top:22px">
+    <div class="label">ESTIMATED TAKE-HOME</div>
+    <div class="big-number green" id="netPay">$0.00</div>
+    <div class="note" id="taxNote"></div>
+  </div>
+</div>
 
-      <button
-        class="secondary-button"
-        onclick="openManualShift()">
-        + Add Shift Manually
-      </button>
+
+<div class="card">
+
+  <div class="label">TODAY</div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-name">Time</div>
+      <div class="stat-value" id="todayHours">0h 00m</div>
     </div>
 
+    <div class="stat">
+      <div class="stat-name">Gross earned</div>
+      <div class="stat-value" id="todayPay">$0.00</div>
+    </div>
   </div>
 
-  <div class="card">
-
-    <div class="label">SHIFT HISTORY</div>
-
-    <div id="shiftList"></div>
-
+  <div class="clock-status" id="clockStatus">
+    You're clocked out
   </div>
+
+  <button class="clock-button" id="clockButton" onclick="toggleClock()">
+    CLOCK IN
+  </button>
+
+  <button class="secondary-button" onclick="openManualShift()">
+    + Add Shift Manually
+  </button>
 
 </div>
 
 
-<div class="modal" id="manualModal">
+<div class="card">
+  <div class="label">CURRENT PERIOD SHIFTS</div>
+  <div id="shiftList"></div>
+</div>
 
-  <div class="modal-box">
+</div>
 
-    <h2>Add Shift</h2>
 
-    <label>Date</label>
-    <input type="date" id="manualDate">
+<!-- HISTORY -->
 
-    <label>Clock In</label>
-    <input type="time" id="manualIn">
+<div class="page" id="history">
 
-    <label>Clock Out</label>
-    <input type="time" id="manualOut">
+<div class="card">
+  <div class="label">PAYCHECK HISTORY</div>
+  <div id="payPeriodHistory"></div>
+</div>
 
-    <div class="modal-actions">
+</div>
 
-      <button
-        class="secondary-button"
-        onclick="closeManualShift()">
-        Cancel
-      </button>
 
-      <button
-        class="clock-button"
-        onclick="saveManualShift()">
-        Save
-      </button>
+<!-- SETTINGS -->
 
-    </div>
+<div class="page" id="settings">
 
+<div class="card">
+
+  <div class="label">PAY SETTINGS</div>
+
+  <div id="savedMessage" class="success">
+    Settings saved.
   </div>
 
+  <div class="setting-label">Hourly Rate ($)</div>
+  <input type="number" step="0.01" id="settingRate">
+
+  <div class="setting-label">Estimated Deductions (%)</div>
+  <input type="number" step="0.1" id="settingTax">
+
+  <div class="setting-label">Overtime Multiplier</div>
+  <input type="number" step="0.1" id="settingOT">
+
+  <div class="setting-label">Target Hours Per Pay Period</div>
+  <input type="number" step="1" id="settingTarget">
+
+  <button class="clock-button" onclick="saveSettings()">
+    SAVE SETTINGS
+  </button>
+
+  <div class="note">
+    Your pay period remains anchored to Monday, September 21, 2026 and repeats every 14 days.
+  </div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- ADD / EDIT SHIFT MODAL -->
+
+<div class="modal" id="manualModal">
+
+<div class="modal-box">
+
+<h2 id="modalTitle">Add Shift</h2>
+
+<label>Date</label>
+<input type="date" id="manualDate">
+
+<label>Clock In</label>
+<input type="time" id="manualIn">
+
+<label>Clock Out</label>
+<input type="time" id="manualOut">
+
+<div class="modal-actions">
+
+<button class="secondary-button" onclick="closeManualShift()">
+  Cancel
+</button>
+
+<button class="clock-button" onclick="saveManualShift()">
+  Save
+</button>
+
+</div>
+
+</div>
 </div>
 
 
 <script>
 
-const HOURLY_RATE = 25.50;
-const TAX_RATE = 0.19;
-const OT_MULTIPLIER = 1.5;
+/* DEFAULT SETTINGS */
 
-/*
-  Anchor pay period:
-  Monday September 21, 2026
-*/
+const DEFAULT_SETTINGS = {
+  hourlyRate: 25.50,
+  taxRate: 19,
+  overtimeMultiplier: 1.5,
+  targetHours: 80
+};
+
 const PAY_PERIOD_ANCHOR =
   new Date(2026, 8, 21, 0, 0, 0, 0);
 
+
+/* LOAD SAVED DATA */
+
+let settings =
+  JSON.parse(localStorage.getItem("payclock_settings"))
+  || {...DEFAULT_SETTINGS};
+
 let shifts =
-  JSON.parse(localStorage.getItem("payclock_shifts")) || [];
+  JSON.parse(localStorage.getItem("payclock_shifts"))
+  || [];
 
 let clockedInAt =
   localStorage.getItem("payclock_clocked_in");
 
+let editingShiftId = null;
+
+
+/* SAVE */
 
 function saveData() {
-
   localStorage.setItem(
     "payclock_shifts",
     JSON.stringify(shifts)
   );
+}
 
+function saveSettingsData() {
+  localStorage.setItem(
+    "payclock_settings",
+    JSON.stringify(settings)
+  );
 }
 
 
+/* NAVIGATION */
+
+function showPage(page, button) {
+
+  document.querySelectorAll(".page")
+    .forEach(p => p.classList.remove("active"));
+
+  document.getElementById(page)
+    .classList.add("active");
+
+  document.querySelectorAll(".tab")
+    .forEach(t => t.classList.remove("active"));
+
+  button.classList.add("active");
+
+  if(page === "history") {
+    renderPayPeriodHistory();
+  }
+
+  if(page === "settings") {
+    loadSettingsForm();
+  }
+}
+
+
+/* PAY PERIOD */
+
 function getPayPeriod(date = new Date()) {
 
-  const oneDay = 86400000;
-  const periodLength = 14 * oneDay;
+  const target = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
 
-  const anchor =
-    new Date(
-      PAY_PERIOD_ANCHOR.getFullYear(),
-      PAY_PERIOD_ANCHOR.getMonth(),
-      PAY_PERIOD_ANCHOR.getDate()
+  const anchor = new Date(
+    PAY_PERIOD_ANCHOR.getFullYear(),
+    PAY_PERIOD_ANCHOR.getMonth(),
+    PAY_PERIOD_ANCHOR.getDate()
+  );
+
+  const dayDifference =
+    Math.floor(
+      (target.getTime() - anchor.getTime()) / 86400000
     );
 
-  const target =
-    new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate()
-    );
+  const periodNumber =
+    Math.floor(dayDifference / 14);
 
-  const diff =
-    target.getTime() - anchor.getTime();
+  const start = new Date(anchor);
+  start.setDate(start.getDate() + periodNumber * 14);
 
-  const periods =
-    Math.floor(diff / periodLength);
-
-  const start =
-    new Date(
-      anchor.getTime() +
-      periods * periodLength
-    );
-
-  const end =
-    new Date(start);
-
+  const end = new Date(start);
   end.setDate(end.getDate() + 13);
-
   end.setHours(23,59,59,999);
 
-  return { start, end };
-
+  return {start,end};
 }
 
 
 function formatDate(date) {
-
-  return date.toLocaleDateString(
-    "en-US",
-    {
-      month: "short",
-      day: "numeric"
-    }
-  );
-
+  return date.toLocaleDateString("en-US",{
+    month:"short",
+    day:"numeric"
+  });
 }
 
+function formatLongDate(date) {
+  return date.toLocaleDateString("en-US",{
+    weekday:"short",
+    month:"short",
+    day:"numeric"
+  });
+}
 
 function formatTime(date) {
-
-  return date.toLocaleTimeString(
-    "en-US",
-    {
-      hour: "numeric",
-      minute: "2-digit"
-    }
-  );
-
+  return date.toLocaleTimeString("en-US",{
+    hour:"numeric",
+    minute:"2-digit"
+  });
 }
-
 
 function formatHours(hours) {
 
   const totalMinutes =
-    Math.max(0, Math.round(hours * 60));
+    Math.max(0,Math.round(hours * 60));
 
-  const h =
-    Math.floor(totalMinutes / 60);
-
-  const m =
-    totalMinutes % 60;
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
 
   return `${h}h ${String(m).padStart(2,"0")}m`;
-
 }
 
+function money(amount) {
+  return `$${amount.toFixed(2)}`;
+}
 
 function hoursBetween(start,end) {
-
   return Math.max(
     0,
-    (end.getTime() - start.getTime())
-    / 3600000
+    (end.getTime() - start.getTime()) / 3600000
   );
-
 }
 
+
+/* WORK WEEK */
 
 function getWeekStart(date) {
 
   const d = new Date(date);
-
   d.setHours(0,0,0,0);
 
   const day = d.getDay();
+  const difference = day === 0 ? -6 : 1 - day;
 
-  const difference =
-    day === 0 ? -6 : 1 - day;
-
-  d.setDate(
-    d.getDate() + difference
-  );
+  d.setDate(d.getDate() + difference);
 
   return d;
-
 }
 
 
-function calculatePay(shiftArray) {
+/* PAY CALCULATION */
 
-  /*
-    Group hours by Monday-Sunday week
-    so overtime is calculated separately
-    for each workweek.
-  */
+function calculatePay(shiftArray) {
 
   const weeks = {};
 
   shiftArray.forEach(shift => {
 
-    const start =
-      new Date(shift.start);
+    const start = new Date(shift.start);
+    const end = new Date(shift.end);
 
-    const end =
-      new Date(shift.end);
+    const hours = hoursBetween(start,end);
 
-    const hours =
-      hoursBetween(start,end);
-
-    const week =
-      getWeekStart(start);
+    const week = getWeekStart(start);
 
     const key =
-      week.toISOString().slice(0,10);
+      `${week.getFullYear()}-${week.getMonth()}-${week.getDate()}`;
 
-    if(!weeks[key]) {
-      weeks[key] = 0;
-    }
+    if(!weeks[key]) weeks[key] = 0;
 
     weeks[key] += hours;
-
   });
-
 
   let regularHours = 0;
   let overtimeHours = 0;
 
-
   Object.values(weeks).forEach(hours => {
 
-    regularHours +=
-      Math.min(hours,40);
-
-    overtimeHours +=
-      Math.max(hours - 40,0);
+    regularHours += Math.min(hours,40);
+    overtimeHours += Math.max(hours - 40,0);
 
   });
 
+  const regularPay =
+    regularHours * settings.hourlyRate;
+
+  const overtimePay =
+    overtimeHours *
+    settings.hourlyRate *
+    settings.overtimeMultiplier;
 
   const gross =
-    regularHours * HOURLY_RATE +
-    overtimeHours *
-    HOURLY_RATE *
-    OT_MULTIPLIER;
+    regularPay + overtimePay;
 
+  const net =
+    gross * (1 - settings.taxRate / 100);
 
   return {
     regularHours,
     overtimeHours,
-    totalHours:
-      regularHours + overtimeHours,
-    gross
+    totalHours:regularHours + overtimeHours,
+    regularPay,
+    overtimePay,
+    gross,
+    net
   };
-
 }
 
+
+/* CLOCK */
 
 function toggleClock() {
 
   if(!clockedInAt) {
 
-    clockedInAt =
-      new Date().toISOString();
+    clockedInAt = new Date().toISOString();
 
     localStorage.setItem(
       "payclock_clocked_in",
       clockedInAt
     );
 
-  }
+  } else {
 
-  else {
-
-    const end =
-      new Date();
+    const end = new Date();
 
     shifts.push({
-      id: Date.now(),
-      start: clockedInAt,
-      end: end.toISOString()
+      id:Date.now(),
+      start:clockedInAt,
+      end:end.toISOString()
     });
 
     saveData();
@@ -572,167 +726,183 @@ function toggleClock() {
     localStorage.removeItem(
       "payclock_clocked_in"
     );
-
   }
 
   render();
-
 }
 
 
 function getActiveShift() {
 
-  if(!clockedInAt)
-    return null;
+  if(!clockedInAt) return null;
 
   return {
-    id: "active",
-    start: clockedInAt,
-    end: new Date().toISOString()
+    id:"active",
+    start:clockedInAt,
+    end:new Date().toISOString()
   };
+}
 
+
+/* MANUAL SHIFT */
+
+function localDateString(date) {
+
+  return (
+    date.getFullYear() + "-" +
+    String(date.getMonth()+1).padStart(2,"0") + "-" +
+    String(date.getDate()).padStart(2,"0")
+  );
+}
+
+function localTimeString(date) {
+
+  return (
+    String(date.getHours()).padStart(2,"0") + ":" +
+    String(date.getMinutes()).padStart(2,"0")
+  );
 }
 
 
 function openManualShift() {
 
-  const modal =
-    document.getElementById(
-      "manualModal"
-    );
+  editingShiftId = null;
 
-  modal.classList.add("show");
+  document.getElementById("modalTitle")
+    .textContent = "Add Shift";
 
-  document.getElementById(
-    "manualDate"
-  ).value =
-    new Date()
-    .toISOString()
-    .slice(0,10);
+  document.getElementById("manualDate")
+    .value = localDateString(new Date());
 
+  document.getElementById("manualIn").value = "";
+  document.getElementById("manualOut").value = "";
+
+  document.getElementById("manualModal")
+    .classList.add("show");
+}
+
+
+function editShift(id) {
+
+  const shift =
+    shifts.find(s => s.id === id);
+
+  if(!shift) return;
+
+  editingShiftId = id;
+
+  const start = new Date(shift.start);
+  const end = new Date(shift.end);
+
+  document.getElementById("modalTitle")
+    .textContent = "Edit Shift";
+
+  document.getElementById("manualDate")
+    .value = localDateString(start);
+
+  document.getElementById("manualIn")
+    .value = localTimeString(start);
+
+  document.getElementById("manualOut")
+    .value = localTimeString(end);
+
+  document.getElementById("manualModal")
+    .classList.add("show");
 }
 
 
 function closeManualShift() {
 
-  document.getElementById(
-    "manualModal"
-  ).classList.remove("show");
+  editingShiftId = null;
 
+  document.getElementById("manualModal")
+    .classList.remove("show");
 }
 
 
 function saveManualShift() {
 
   const date =
-    document.getElementById(
-      "manualDate"
-    ).value;
+    document.getElementById("manualDate").value;
 
   const startTime =
-    document.getElementById(
-      "manualIn"
-    ).value;
+    document.getElementById("manualIn").value;
 
   const endTime =
-    document.getElementById(
-      "manualOut"
-    ).value;
+    document.getElementById("manualOut").value;
 
-
-  if(
-    !date ||
-    !startTime ||
-    !endTime
-  ) {
+  if(!date || !startTime || !endTime) {
 
     alert(
       "Please enter the date, clock-in time, and clock-out time."
     );
 
     return;
-
   }
-
 
   const start =
-    new Date(
-      `${date}T${startTime}`
-    );
+    new Date(`${date}T${startTime}`);
 
   let end =
-    new Date(
-      `${date}T${endTime}`
-    );
-
-
-  /*
-    Supports overnight shifts.
-  */
+    new Date(`${date}T${endTime}`);
 
   if(end <= start) {
-
-    end.setDate(
-      end.getDate() + 1
-    );
-
+    end.setDate(end.getDate()+1);
   }
 
+  if(editingShiftId !== null) {
 
-  shifts.push({
-    id: Date.now(),
-    start:
-      start.toISOString(),
-    end:
-      end.toISOString()
-  });
+    const index =
+      shifts.findIndex(
+        s => s.id === editingShiftId
+      );
 
+    if(index !== -1) {
+
+      shifts[index] = {
+        ...shifts[index],
+        start:start.toISOString(),
+        end:end.toISOString()
+      };
+    }
+
+  } else {
+
+    shifts.push({
+      id:Date.now(),
+      start:start.toISOString(),
+      end:end.toISOString()
+    });
+  }
 
   saveData();
-
   closeManualShift();
-
   render();
-
 }
 
+
+/* DELETE */
 
 function deleteShift(id) {
 
-  if(
-    !confirm(
-      "Delete this shift?"
-    )
-  ) return;
-
+  if(!confirm("Delete this shift?")) return;
 
   shifts =
-    shifts.filter(
-      shift =>
-      shift.id !== id
-    );
-
+    shifts.filter(s => s.id !== id);
 
   saveData();
-
   render();
-
 }
 
 
-function renderHistory(
-  relevantShifts
-) {
+/* SHIFT HISTORY */
+
+function renderHistory(relevantShifts) {
 
   const list =
-    document.getElementById(
-      "shiftList"
-    );
+    document.getElementById("shiftList");
 
-
-  if(
-    relevantShifts.length === 0
-  ) {
+  if(relevantShifts.length === 0) {
 
     list.innerHTML =
       `<div class="empty">
@@ -740,9 +910,7 @@ function renderHistory(
       </div>`;
 
     return;
-
   }
-
 
   const sorted =
     [...relevantShifts]
@@ -752,62 +920,44 @@ function renderHistory(
       new Date(a.start)
     );
 
-
   list.innerHTML =
     sorted.map(shift => {
 
-      const start =
-        new Date(shift.start);
-
-      const end =
-        new Date(shift.end);
+      const start = new Date(shift.start);
+      const end = new Date(shift.end);
 
       const hours =
         hoursBetween(start,end);
 
-      const pay =
-        hours * HOURLY_RATE;
-
+      const basePay =
+        hours * settings.hourlyRate;
 
       return `
         <div class="shift">
 
           <div class="shift-top">
-
-            <span>
-              ${start.toLocaleDateString(
-                "en-US",
-                {
-                  weekday:"short",
-                  month:"short",
-                  day:"numeric"
-                }
-              )}
-            </span>
-
-            <span>
-              ${formatHours(hours)}
-            </span>
-
+            <span>${formatLongDate(start)}</span>
+            <span>${formatHours(hours)}</span>
           </div>
 
           <div class="shift-time">
+            ${formatTime(start)} – ${formatTime(end)}
+            · ${money(basePay)}
+          </div>
 
-            ${formatTime(start)}
-            –
-            ${formatTime(end)}
+          <div class="actions">
 
-            · $${pay.toFixed(2)}
+            <button
+              class="action edit"
+              onclick="editShift(${shift.id})">
+              Edit
+            </button>
 
-            <span
-              onclick="deleteShift(${shift.id})"
-              style="
-                float:right;
-                color:#b91c1c;
-                cursor:pointer;
-              ">
+            <button
+              class="action delete"
+              onclick="deleteShift(${shift.id})">
               Delete
-            </span>
+            </button>
 
           </div>
 
@@ -815,36 +965,201 @@ function renderHistory(
       `;
 
     }).join("");
-
 }
 
 
+/* PAY PERIOD HISTORY */
+
+function renderPayPeriodHistory() {
+
+  const container =
+    document.getElementById("payPeriodHistory");
+
+  if(shifts.length === 0) {
+
+    container.innerHTML =
+      `<div class="empty">
+        Your completed pay periods will appear here.
+      </div>`;
+
+    return;
+  }
+
+  const periods = {};
+
+  shifts.forEach(shift => {
+
+    const start = new Date(shift.start);
+    const period = getPayPeriod(start);
+
+    const key =
+      localDateString(period.start);
+
+    if(!periods[key]) {
+
+      periods[key] = {
+        start:period.start,
+        end:period.end,
+        shifts:[]
+      };
+    }
+
+    periods[key].shifts.push(shift);
+  });
+
+  const sortedPeriods =
+    Object.values(periods)
+    .sort((a,b) => b.start - a.start);
+
+  container.innerHTML =
+    sortedPeriods.map(period => {
+
+      const pay =
+        calculatePay(period.shifts);
+
+      return `
+        <div class="history-card">
+
+          <div class="history-title">
+            ${formatDate(period.start)}
+            –
+            ${formatDate(period.end)}
+          </div>
+
+          <div class="history-details">
+            ${formatHours(pay.totalHours)} worked
+            · ${money(pay.gross)} gross
+          </div>
+
+          <div class="history-details">
+            Estimated take-home:
+            <strong>${money(pay.net)}</strong>
+          </div>
+
+          ${
+            pay.overtimeHours > 0
+            ? `<div class="history-details">
+                Overtime:
+                ${formatHours(pay.overtimeHours)}
+                · ${money(pay.overtimePay)}
+               </div>`
+            : ""
+          }
+
+        </div>
+      `;
+
+    }).join("");
+}
+
+
+/* SETTINGS */
+
+function loadSettingsForm() {
+
+  document.getElementById("settingRate")
+    .value = settings.hourlyRate;
+
+  document.getElementById("settingTax")
+    .value = settings.taxRate;
+
+  document.getElementById("settingOT")
+    .value = settings.overtimeMultiplier;
+
+  document.getElementById("settingTarget")
+    .value = settings.targetHours;
+}
+
+
+function saveSettings() {
+
+  const rate =
+    parseFloat(
+      document.getElementById("settingRate").value
+    );
+
+  const tax =
+    parseFloat(
+      document.getElementById("settingTax").value
+    );
+
+  const ot =
+    parseFloat(
+      document.getElementById("settingOT").value
+    );
+
+  const target =
+    parseFloat(
+      document.getElementById("settingTarget").value
+    );
+
+  if(
+    !Number.isFinite(rate) ||
+    rate <= 0 ||
+    !Number.isFinite(tax) ||
+    tax < 0 ||
+    tax >= 100 ||
+    !Number.isFinite(ot) ||
+    ot <= 0 ||
+    !Number.isFinite(target) ||
+    target <= 0
+  ) {
+
+    alert("Please enter valid settings.");
+    return;
+  }
+
+  settings = {
+    hourlyRate:rate,
+    taxRate:tax,
+    overtimeMultiplier:ot,
+    targetHours:target
+  };
+
+  saveSettingsData();
+
+  const message =
+    document.getElementById("savedMessage");
+
+  message.style.display = "block";
+
+  setTimeout(
+    () => message.style.display = "none",
+    2000
+  );
+
+  render();
+}
+
+
+/* MAIN RENDER */
+
 function render() {
 
-  const now =
-    new Date();
+  const now = new Date();
+
+  document.getElementById("subtitle")
+    .textContent =
+    `${money(settings.hourlyRate)}/hr • Estimated take-home tracker`;
+
+  document.getElementById("taxNote")
+    .textContent =
+    `Based on an estimated ${settings.taxRate}% deduction rate. This is an estimate, not your actual payroll calculation.`;
 
   const period =
     getPayPeriod(now);
 
-
-  document.getElementById(
-    "periodText"
-  ).textContent =
+  document.getElementById("periodText")
+    .textContent =
     `${formatDate(period.start)} – ${formatDate(period.end)}`;
 
+  let allShifts = [...shifts];
 
-  let allShifts =
-    [...shifts];
+  const active = getActiveShift();
 
-
-  const active =
-    getActiveShift();
-
-
-  if(active)
+  if(active) {
     allShifts.push(active);
-
+  }
 
   const periodShifts =
     allShifts.filter(shift => {
@@ -856,78 +1171,72 @@ function render() {
         start >= period.start &&
         start <= period.end
       );
-
     });
 
-
   const pay =
-    calculatePay(
-      periodShifts
+    calculatePay(periodShifts);
+
+  document.getElementById("periodHours")
+    .textContent =
+    formatHours(pay.totalHours);
+
+  document.getElementById("regularHours")
+    .textContent =
+    formatHours(pay.regularHours);
+
+  document.getElementById("overtimeHours")
+    .textContent =
+    formatHours(pay.overtimeHours);
+
+  document.getElementById("grossPay")
+    .textContent =
+    money(pay.gross);
+
+  document.getElementById("netPay")
+    .textContent =
+    money(pay.net);
+
+
+  /* PROGRESS */
+
+  const progress =
+    Math.min(
+      100,
+      (pay.totalHours / settings.targetHours) * 100
     );
 
+  document.getElementById("progressBar")
+    .style.width =
+    `${progress}%`;
 
-  const estimatedNet =
-    pay.gross *
-    (1 - TAX_RATE);
+  document.getElementById("progressHours")
+    .textContent =
+    `${pay.totalHours.toFixed(1)} / ${settings.targetHours} hrs`;
 
-
-  document.getElementById(
-    "periodHours"
-  ).textContent =
-    formatHours(
-      pay.totalHours
-    );
-
-
-  document.getElementById(
-    "grossPay"
-  ).textContent =
-    `$${pay.gross.toFixed(2)}`;
+  document.getElementById("progressPercent")
+    .textContent =
+    `${Math.round(progress)}%`;
 
 
-  document.getElementById(
-    "netPay"
-  ).textContent =
-    `$${estimatedNet.toFixed(2)}`;
+  /* TODAY */
 
+  const todayStart = new Date();
+  todayStart.setHours(0,0,0,0);
 
-  /*
-    Today's calculations
-  */
-
-  const todayStart =
-    new Date();
-
-  todayStart.setHours(
-    0,0,0,0
-  );
-
-
-  const todayEnd =
-    new Date();
-
-  todayEnd.setHours(
-    23,59,59,999
-  );
-
+  const todayEnd = new Date();
+  todayEnd.setHours(23,59,59,999);
 
   const todayShifts =
-    allShifts.filter(
-      shift => {
+    allShifts.filter(shift => {
 
-        const start =
-          new Date(
-            shift.start
-          );
+      const start =
+        new Date(shift.start);
 
-        return (
-          start >= todayStart &&
-          start <= todayEnd
-        );
-
-      }
-    );
-
+      return (
+        start >= todayStart &&
+        start <= todayEnd
+      );
+    });
 
   const todayHours =
     todayShifts.reduce(
@@ -940,103 +1249,65 @@ function render() {
       0
     );
 
+  document.getElementById("todayHours")
+    .textContent =
+    formatHours(todayHours);
 
-  document.getElementById(
-    "todayHours"
-  ).textContent =
-    formatHours(
-      todayHours
+  document.getElementById("todayPay")
+    .textContent =
+    money(
+      todayHours * settings.hourlyRate
     );
 
 
-  document.getElementById(
-    "todayPay"
-  ).textContent =
-    `$${(
-      todayHours *
-      HOURLY_RATE
-    ).toFixed(2)}`;
-
-
-  /*
-    Clock button
-  */
+  /* CLOCK STATUS */
 
   const button =
-    document.getElementById(
-      "clockButton"
-    );
+    document.getElementById("clockButton");
 
   const status =
-    document.getElementById(
-      "clockStatus"
-    );
-
+    document.getElementById("clockStatus");
 
   if(clockedInAt) {
 
     button.textContent =
       "CLOCK OUT";
 
-    button.classList.add(
-      "out"
-    );
+    button.classList.add("out");
 
-    status.classList.add(
-      "active"
-    );
+    status.classList.add("active");
 
     status.textContent =
-      `● Clocked in since ${
-        formatTime(
-          new Date(
-            clockedInAt
-          )
-        )
-      }`;
+      `● Clocked in since ${formatTime(
+        new Date(clockedInAt)
+      )}`;
 
-  }
-
-  else {
+  } else {
 
     button.textContent =
       "CLOCK IN";
 
-    button.classList.remove(
-      "out"
-    );
+    button.classList.remove("out");
 
-    status.classList.remove(
-      "active"
-    );
+    status.classList.remove("active");
 
     status.textContent =
       "You're clocked out";
-
   }
-
 
   renderHistory(
     periodShifts.filter(
-      shift =>
-      shift.id !== "active"
+      shift => shift.id !== "active"
     )
   );
-
 }
 
 
-/*
-  Refresh the live totals
-  every second while clocked in.
-*/
+/* LIVE UPDATE */
 
-setInterval(
-  render,
-  1000
-);
+setInterval(render,1000);
 
-
+loadSettingsForm();
 render();
 
 </script>
