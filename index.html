@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111827">
+  <title>PayClock</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    .app {
+      max-width: 520px;
+      margin: auto;
+      min-height: 100vh;
+      padding: 24px 18px 100px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+    }
+
+    .subtitle {
+      color: #6b7280;
+      margin-top: 4px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 22px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 5px 20px rgba(0,0,0,.06);
+    }
+
+    .label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #6b7280;
+      letter-spacing: 1px;
+    }
+
+    .period {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 5px;
+    }
+
+    .big-number {
+      font-size: 42px;
+      font-weight: 800;
+      margin: 8px 0 0;
+    }
+
+    .green {
+      color: #16803c;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .stat-name {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 750;
+      margin-top: 3px;
+    }
+
+    .clock-status {
+      text-align: center;
+      margin-bottom: 14px;
+      color: #6b7280;
+    }
+
+    .clock-status.active {
+      color: #16803c;
+      font-weight: 700;
+    }
+
+    .clock-button {
+      width: 100%;
+      border: none;
+      border-radius: 18px;
+      padding: 19px;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      background: #111827;
+      color: white;
+    }
+
+    .clock-button.out {
+      background: #b91c1c;
+    }
+
+    .secondary-button {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      background: white;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .shift {
+      padding: 13px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .shift:last-child {
+      border-bottom: none;
+    }
+
+    .shift-top {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+    }
+
+    .shift-time {
+      color: #6b7280;
+      font-size: 14px;
+      margin-top: 3px;
+    }
+
+    .empty {
+      color: #6b7280;
+      text-align: center;
+      padding: 12px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 10;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-box {
+      background: white;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 22px;
+      padding: 22px;
+    }
+
+    .modal-box h2 {
+      margin-top: 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      margin: 6px 0 13px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      font-size: 16px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 12px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <h1>PayClock</h1>
+  <div class="subtitle">$25.50/hr • Estimated take-home tracker</div>
+
+  <div class="card">
+    <div class="label">CURRENT PAY PERIOD</div>
+    <div class="period" id="periodText"></div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-name">Hours worked</div>
+        <div class="stat-value" id="periodHours">0h 00m</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-name">Gross earned</div>
+        <div class="stat-value" id="grossPay">$0.00</div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px">
+      <div class="label">ESTIMATED TAKE-HOME</div>
+      <div class="big-number green" id="netPay">$0.00</div>
+      <div class="note">
+        Based on an estimated 19% deduction rate. This is an estimate, not your actual payroll calculation.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+
+    <div class="label">TODAY</div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-name">Time</div>
+        <div class="stat-value" id="todayHours">0h 00m</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-name">Gross earned</div>
+        <div class="stat-value" id="todayPay">$0.00</div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px">
+      <div class="clock-status" id="clockStatus">You're clocked out</div>
+
+      <button
+        class="clock-button"
+        id="clockButton"
+        onclick="toggleClock()">
+        CLOCK IN
+      </button>
+
+      <button
+        class="secondary-button"
+        onclick="openManualShift()">
+        + Add Shift Manually
+      </button>
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <div class="label">SHIFT HISTORY</div>
+
+    <div id="shiftList"></div>
+
+  </div>
+
+</div>
+
+
+<div class="modal" id="manualModal">
+
+  <div class="modal-box">
+
+    <h2>Add Shift</h2>
+
+    <label>Date</label>
+    <input type="date" id="manualDate">
+
+    <label>Clock In</label>
+    <input type="time" id="manualIn">
+
+    <label>Clock Out</label>
+    <input type="time" id="manualOut">
+
+    <div class="modal-actions">
+
+      <button
+        class="secondary-button"
+        onclick="closeManualShift()">
+        Cancel
+      </button>
+
+      <button
+        class="clock-button"
+        onclick="saveManualShift()">
+        Save
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+const HOURLY_RATE = 25.50;
+const TAX_RATE = 0.19;
+const OT_MULTIPLIER = 1.5;
+
+/*
+  Anchor pay period:
+  Monday September 21, 2026
+*/
+const PAY_PERIOD_ANCHOR =
+  new Date(2026, 8, 21, 0, 0, 0, 0);
+
+let shifts =
+  JSON.parse(localStorage.getItem("payclock_shifts")) || [];
+
+let clockedInAt =
+  localStorage.getItem("payclock_clocked_in");
+
+
+function saveData() {
+
+  localStorage.setItem(
+    "payclock_shifts",
+    JSON.stringify(shifts)
+  );
+
+}
+
+
+function getPayPeriod(date = new Date()) {
+
+  const oneDay = 86400000;
+  const periodLength = 14 * oneDay;
+
+  const anchor =
+    new Date(
+      PAY_PERIOD_ANCHOR.getFullYear(),
+      PAY_PERIOD_ANCHOR.getMonth(),
+      PAY_PERIOD_ANCHOR.getDate()
+    );
+
+  const target =
+    new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+
+  const diff =
+    target.getTime() - anchor.getTime();
+
+  const periods =
+    Math.floor(diff / periodLength);
+
+  const start =
+    new Date(
+      anchor.getTime() +
+      periods * periodLength
+    );
+
+  const end =
+    new Date(start);
+
+  end.setDate(end.getDate() + 13);
+
+  end.setHours(23,59,59,999);
+
+  return { start, end };
+
+}
+
+
+function formatDate(date) {
+
+  return date.toLocaleDateString(
+    "en-US",
+    {
+      month: "short",
+      day: "numeric"
+    }
+  );
+
+}
+
+
+function formatTime(date) {
+
+  return date.toLocaleTimeString(
+    "en-US",
+    {
+      hour: "numeric",
+      minute: "2-digit"
+    }
+  );
+
+}
+
+
+function formatHours(hours) {
+
+  const totalMinutes =
+    Math.max(0, Math.round(hours * 60));
+
+  const h =
+    Math.floor(totalMinutes / 60);
+
+  const m =
+    totalMinutes % 60;
+
+  return `${h}h ${String(m).padStart(2,"0")}m`;
+
+}
+
+
+function hoursBetween(start,end) {
+
+  return Math.max(
+    0,
+    (end.getTime() - start.getTime())
+    / 3600000
+  );
+
+}
+
+
+function getWeekStart(date) {
+
+  const d = new Date(date);
+
+  d.setHours(0,0,0,0);
+
+  const day = d.getDay();
+
+  const difference =
+    day === 0 ? -6 : 1 - day;
+
+  d.setDate(
+    d.getDate() + difference
+  );
+
+  return d;
+
+}
+
+
+function calculatePay(shiftArray) {
+
+  /*
+    Group hours by Monday-Sunday week
+    so overtime is calculated separately
+    for each workweek.
+  */
+
+  const weeks = {};
+
+  shiftArray.forEach(shift => {
+
+    const start =
+      new Date(shift.start);
+
+    const end =
+      new Date(shift.end);
+
+    const hours =
+      hoursBetween(start,end);
+
+    const week =
+      getWeekStart(start);
+
+    const key =
+      week.toISOString().slice(0,10);
+
+    if(!weeks[key]) {
+      weeks[key] = 0;
+    }
+
+    weeks[key] += hours;
+
+  });
+
+
+  let regularHours = 0;
+  let overtimeHours = 0;
+
+
+  Object.values(weeks).forEach(hours => {
+
+    regularHours +=
+      Math.min(hours,40);
+
+    overtimeHours +=
+      Math.max(hours - 40,0);
+
+  });
+
+
+  const gross =
+    regularHours * HOURLY_RATE +
+    overtimeHours *
+    HOURLY_RATE *
+    OT_MULTIPLIER;
+
+
+  return {
+    regularHours,
+    overtimeHours,
+    totalHours:
+      regularHours + overtimeHours,
+    gross
+  };
+
+}
+
+
+function toggleClock() {
+
+  if(!clockedInAt) {
+
+    clockedInAt =
+      new Date().toISOString();
+
+    localStorage.setItem(
+      "payclock_clocked_in",
+      clockedInAt
+    );
+
+  }
+
+  else {
+
+    const end =
+      new Date();
+
+    shifts.push({
+      id: Date.now(),
+      start: clockedInAt,
+      end: end.toISOString()
+    });
+
+    saveData();
+
+    clockedInAt = null;
+
+    localStorage.removeItem(
+      "payclock_clocked_in"
+    );
+
+  }
+
+  render();
+
+}
+
+
+function getActiveShift() {
+
+  if(!clockedInAt)
+    return null;
+
+  return {
+    id: "active",
+    start: clockedInAt,
+    end: new Date().toISOString()
+  };
+
+}
+
+
+function openManualShift() {
+
+  const modal =
+    document.getElementById(
+      "manualModal"
+    );
+
+  modal.classList.add("show");
+
+  document.getElementById(
+    "manualDate"
+  ).value =
+    new Date()
+    .toISOString()
+    .slice(0,10);
+
+}
+
+
+function closeManualShift() {
+
+  document.getElementById(
+    "manualModal"
+  ).classList.remove("show");
+
+}
+
+
+function saveManualShift() {
+
+  const date =
+    document.getElementById(
+      "manualDate"
+    ).value;
+
+  const startTime =
+    document.getElementById(
+      "manualIn"
+    ).value;
+
+  const endTime =
+    document.getElementById(
+      "manualOut"
+    ).value;
+
+
+  if(
+    !date ||
+    !startTime ||
+    !endTime
+  ) {
+
+    alert(
+      "Please enter the date, clock-in time, and clock-out time."
+    );
+
+    return;
+
+  }
+
+
+  const start =
+    new Date(
+      `${date}T${startTime}`
+    );
+
+  let end =
+    new Date(
+      `${date}T${endTime}`
+    );
+
+
+  /*
+    Supports overnight shifts.
+  */
+
+  if(end <= start) {
+
+    end.setDate(
+      end.getDate() + 1
+    );
+
+  }
+
+
+  shifts.push({
+    id: Date.now(),
+    start:
+      start.toISOString(),
+    end:
+      end.toISOString()
+  });
+
+
+  saveData();
+
+  closeManualShift();
+
+  render();
+
+}
+
+
+function deleteShift(id) {
+
+  if(
+    !confirm(
+      "Delete this shift?"
+    )
+  ) return;
+
+
+  shifts =
+    shifts.filter(
+      shift =>
+      shift.id !== id
+    );
+
+
+  saveData();
+
+  render();
+
+}
+
+
+function renderHistory(
+  relevantShifts
+) {
+
+  const list =
+    document.getElementById(
+      "shiftList"
+    );
+
+
+  if(
+    relevantShifts.length === 0
+  ) {
+
+    list.innerHTML =
+      `<div class="empty">
+        No shifts recorded yet.
+      </div>`;
+
+    return;
+
+  }
+
+
+  const sorted =
+    [...relevantShifts]
+    .sort(
+      (a,b) =>
+      new Date(b.start) -
+      new Date(a.start)
+    );
+
+
+  list.innerHTML =
+    sorted.map(shift => {
+
+      const start =
+        new Date(shift.start);
+
+      const end =
+        new Date(shift.end);
+
+      const hours =
+        hoursBetween(start,end);
+
+      const pay =
+        hours * HOURLY_RATE;
+
+
+      return `
+        <div class="shift">
+
+          <div class="shift-top">
+
+            <span>
+              ${start.toLocaleDateString(
+                "en-US",
+                {
+                  weekday:"short",
+                  month:"short",
+                  day:"numeric"
+                }
+              )}
+            </span>
+
+            <span>
+              ${formatHours(hours)}
+            </span>
+
+          </div>
+
+          <div class="shift-time">
+
+            ${formatTime(start)}
+            –
+            ${formatTime(end)}
+
+            · $${pay.toFixed(2)}
+
+            <span
+              onclick="deleteShift(${shift.id})"
+              style="
+                float:right;
+                color:#b91c1c;
+                cursor:pointer;
+              ">
+              Delete
+            </span>
+
+          </div>
+
+        </div>
+      `;
+
+    }).join("");
+
+}
+
+
+function render() {
+
+  const now =
+    new Date();
+
+  const period =
+    getPayPeriod(now);
+
+
+  document.getElementById(
+    "periodText"
+  ).textContent =
+    `${formatDate(period.start)} – ${formatDate(period.end)}`;
+
+
+  let allShifts =
+    [...shifts];
+
+
+  const active =
+    getActiveShift();
+
+
+  if(active)
+    allShifts.push(active);
+
+
+  const periodShifts =
+    allShifts.filter(shift => {
+
+      const start =
+        new Date(shift.start);
+
+      return (
+        start >= period.start &&
+        start <= period.end
+      );
+
+    });
+
+
+  const pay =
+    calculatePay(
+      periodShifts
+    );
+
+
+  const estimatedNet =
+    pay.gross *
+    (1 - TAX_RATE);
+
+
+  document.getElementById(
+    "periodHours"
+  ).textContent =
+    formatHours(
+      pay.totalHours
+    );
+
+
+  document.getElementById(
+    "grossPay"
+  ).textContent =
+    `$${pay.gross.toFixed(2)}`;
+
+
+  document.getElementById(
+    "netPay"
+  ).textContent =
+    `$${estimatedNet.toFixed(2)}`;
+
+
+  /*
+    Today's calculations
+  */
+
+  const todayStart =
+    new Date();
+
+  todayStart.setHours(
+    0,0,0,0
+  );
+
+
+  const todayEnd =
+    new Date();
+
+  todayEnd.setHours(
+    23,59,59,999
+  );
+
+
+  const todayShifts =
+    allShifts.filter(
+      shift => {
+
+        const start =
+          new Date(
+            shift.start
+          );
+
+        return (
+          start >= todayStart &&
+          start <= todayEnd
+        );
+
+      }
+    );
+
+
+  const todayHours =
+    todayShifts.reduce(
+      (sum,shift) =>
+        sum +
+        hoursBetween(
+          new Date(shift.start),
+          new Date(shift.end)
+        ),
+      0
+    );
+
+
+  document.getElementById(
+    "todayHours"
+  ).textContent =
+    formatHours(
+      todayHours
+    );
+
+
+  document.getElementById(
+    "todayPay"
+  ).textContent =
+    `$${(
+      todayHours *
+      HOURLY_RATE
+    ).toFixed(2)}`;
+
+
+  /*
+    Clock button
+  */
+
+  const button =
+    document.getElementById(
+      "clockButton"
+    );
+
+  const status =
+    document.getElementById(
+      "clockStatus"
+    );
+
+
+  if(clockedInAt) {
+
+    button.textContent =
+      "CLOCK OUT";
+
+    button.classList.add(
+      "out"
+    );
+
+    status.classList.add(
+      "active"
+    );
+
+    status.textContent =
+      `● Clocked in since ${
+        formatTime(
+          new Date(
+            clockedInAt
+          )
+        )
+      }`;
+
+  }
+
+  else {
+
+    button.textContent =
+      "CLOCK IN";
+
+    button.classList.remove(
+      "out"
+    );
+
+    status.classList.remove(
+      "active"
+    );
+
+    status.textContent =
+      "You're clocked out";
+
+  }
+
+
+  renderHistory(
+    periodShifts.filter(
+      shift =>
+      shift.id !== "active"
+    )
+  );
+
+}
+
+
+/*
+  Refresh the live totals
+  every second while clocked in.
+*/
+
+setInterval(
+  render,
+  1000
+);
+
+
+render();
+
+</script>
+
+</body>
+</html>
