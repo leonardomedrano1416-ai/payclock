@@ -647,7 +647,16 @@ async function pcSyncMoneyBoard(force=false){
 
   try{
     const period=getPayPeriod(new Date());
-    const periodShifts=getShiftsForPeriod(period,true);
+
+    let allShifts=[...shifts];
+    const active=getActiveShift();
+    if(active) allShifts.push(active);
+
+    const periodShifts=allShifts.filter(shift=>{
+      const start=new Date(shift.start);
+      return start>=period.start && start<=period.end;
+    });
+
     const pay=calculatePay(periodShifts);
 
     const ref=pcDB.collection("users").doc(pcUser.uid)
