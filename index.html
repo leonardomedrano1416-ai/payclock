@@ -277,6 +277,38 @@ input {
   margin-bottom:14px;
   font-size:14px;
 }
+
+.sync-pill{
+  display:inline-block;
+  font-size:12px;
+  font-weight:700;
+  padding:7px 10px;
+  border-radius:999px;
+  background:#e5e7eb;
+  color:#374151;
+  margin:0 0 14px;
+}
+.sync-pill.on{background:#dcfce7;color:#166534}
+.login-overlay{
+  position:fixed; inset:0; z-index:9999;
+  background:rgba(17,24,39,.82);
+  display:flex; align-items:center; justify-content:center;
+  padding:20px;
+}
+.login-overlay.hidden{display:none}
+.login-card{
+  width:min(430px,100%);
+  background:white; border-radius:24px; padding:24px;
+  box-shadow:0 20px 60px rgba(0,0,0,.28);
+}
+.login-card h2{margin:0 0 8px}
+.login-card p{color:#6b7280;line-height:1.45}
+.login-card input{
+  width:100%; padding:13px; margin:6px 0 10px;
+  border:1px solid #d1d5db; border-radius:12px; font-size:16px;
+}
+.login-error{min-height:20px;color:#b91c1c;font-size:13px;margin-top:8px}
+
 </style>
 </head>
 
@@ -286,6 +318,7 @@ input {
 
 <h1>PayClock</h1>
 <div class="subtitle" id="subtitle"></div>
+<div class="sync-pill" id="syncPill">Local mode</div>
 
 <div class="tabs">
   <button class="tab active" onclick="showPage('home',this)">Home</button>
@@ -436,10 +469,29 @@ input {
 
 </div>
 
+<div class="card">
+  <div class="label">CLOUD SYNC</div>
+  <div class="note" id="accountText">Sign in to sync PayClock and MoneyBoard.</div>
+  <button class="secondary-button" id="signOutButton" onclick="payclockSignOut()" style="display:none">
+    Sign Out
+  </button>
 </div>
 
 </div>
 
+</div>
+
+
+<div class="login-overlay hidden" id="syncLogin">
+  <div class="login-card">
+    <h2>Sync PayClock</h2>
+    <p>Use the same email and password you use for MoneyBoard. Your password is sent directly to Firebase and is not stored in PayClock.</p>
+    <input type="email" id="syncEmail" placeholder="Email" autocomplete="email">
+    <input type="password" id="syncPassword" placeholder="Password" autocomplete="current-password">
+    <button class="clock-button" onclick="payclockSignIn()">SIGN IN</button>
+    <div class="login-error" id="syncLoginMessage"></div>
+  </div>
+</div>
 
 <!-- ADD / EDIT SHIFT MODAL -->
 
@@ -473,6 +525,10 @@ input {
 </div>
 </div>
 
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
 <script>
 
@@ -510,6 +566,198 @@ let clockedInAt =
 let editingShiftId = null;
 
 
+let pcUser=null;
+let pcRemoteReady=false;
+let pcApplyingRemote=false;
+let pcUnsubscribe=null;
+let pcSaveTimer=null;
+let pcLastMoneyBoardSync=0;
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCtRPjqsDB1nCCrAIue9u5L0FPIM5WoftY",
+  authDomain: "moneyboard-2a0dc.firebaseapp.com",
+  projectId: "moneyboard-2a0dc",
+  storageBucket: "moneyboard-2a0dc.firebasestorage.app",
+  messagingSenderId: "504492647437",
+  appId: "1:504492647437:web:f44cc363d5991e72e9e144"
+};
+
+firebase.initializeApp(firebaseConfig);
+const pcAuth=firebase.auth();
+const pcDB=firebase.firestore();
+
+function pcState(){
+  return {
+    settings,
+    shifts,
+    clockedInAt:clockedInAt || null,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+
+function pcHasMeaningfulLocalData(){
+  return shifts.length>0 ||
+    !!clockedInAt ||
+    localStorage.getItem("payclock_settings") !== null;
+}
+
+function pcApplyState(data){
+  if(!data) return;
+  pcApplyingRemote=true;
+
+  if(data.settings && typeof data.settings==="object"){
+    settings={...DEFAULT_SETTINGS,...data.settings};
+  }
+  if(Array.isArray(data.shifts)) shifts=data.shifts;
+  clockedInAt=data.clockedInAt || null;
+
+  localStorage.setItem("payclock_settings",JSON.stringify(settings));
+  localStorage.setItem("payclock_shifts",JSON.stringify(shifts));
+  if(clockedInAt) localStorage.setItem("payclock_clocked_in",clockedInAt);
+  else localStorage.removeItem("payclock_clocked_in");
+
+  loadSettingsForm();
+  render();
+  pcApplyingRemote=false;
+}
+
+function pcQueueCloudSave(){
+  if(!pcUser || !pcRemoteReady || pcApplyingRemote) return;
+  clearTimeout(pcSaveTimer);
+  pcSaveTimer=setTimeout(async()=>{
+    try{
+      await pcDB.collection("users").doc(pcUser.uid)
+        .collection("payclock").doc("state")
+        .set(pcState(),{merge:true});
+      setSyncStatus(true);
+      await pcSyncMoneyBoard(true);
+    }catch(e){
+      console.error("PayClock sync save failed:",e);
+      setSyncStatus(false,"Sync error");
+    }
+  },250);
+}
+
+async function pcSyncMoneyBoard(force=false){
+  if(!pcUser) return;
+
+  const now=Date.now();
+  if(!force && now-pcLastMoneyBoardSync<15000) return;
+  pcLastMoneyBoardSync=now;
+
+  try{
+    const period=getPayPeriod(new Date());
+    const periodShifts=getShiftsForPeriod(period,true);
+    const pay=calculatePay(periodShifts);
+
+    const ref=pcDB.collection("users").doc(pcUser.uid)
+      .collection("moneyboard").doc("state");
+
+    await ref.update({
+      "money.paycheck":Number(pay.net.toFixed(2)),
+      "payclockEstimateUpdatedAt":firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){
+    if(e && e.code==="not-found"){
+      console.warn("MoneyBoard state does not exist yet; paycheck sync skipped.");
+    }else{
+      console.error("MoneyBoard paycheck sync failed:",e);
+    }
+  }
+}
+
+function setSyncStatus(ok,text){
+  const pill=document.getElementById("syncPill");
+  if(!pill) return;
+  pill.textContent=text || (ok ? "● Synced with MoneyBoard" : "Local mode");
+  pill.classList.toggle("on",!!ok);
+}
+
+async function pcStartSync(user){
+  pcUser=user;
+  const ref=pcDB.collection("users").doc(user.uid)
+    .collection("payclock").doc("state");
+
+  const snap=await ref.get();
+
+  if(snap.exists){
+    pcApplyState(snap.data());
+  }else if(pcHasMeaningfulLocalData()){
+    await ref.set(pcState(),{merge:true});
+  }else{
+    await ref.set(pcState(),{merge:true});
+  }
+
+  pcRemoteReady=true;
+
+  if(pcUnsubscribe) pcUnsubscribe();
+  pcUnsubscribe=ref.onSnapshot(snap=>{
+    if(snap.exists && pcRemoteReady && !pcApplyingRemote){
+      pcApplyState(snap.data());
+      setSyncStatus(true);
+    }
+  },e=>{
+    console.error("PayClock live sync failed:",e);
+    setSyncStatus(false,"Sync error");
+  });
+
+  setSyncStatus(true);
+  document.getElementById("accountText").textContent=`Signed in as ${user.email || "your account"}.`;
+  document.getElementById("signOutButton").style.display="block";
+  await pcSyncMoneyBoard(true);
+}
+
+async function payclockSignIn(){
+  const email=document.getElementById("syncEmail").value.trim();
+  const password=document.getElementById("syncPassword").value;
+  const msg=document.getElementById("syncLoginMessage");
+
+  if(!email || !password){
+    msg.textContent="Enter your MoneyBoard email and password.";
+    return;
+  }
+
+  msg.textContent="Signing in…";
+  try{
+    await pcAuth.signInWithEmailAndPassword(email,password);
+    document.getElementById("syncPassword").value="";
+  }catch(e){
+    console.error(e);
+    msg.textContent="Sign-in failed. Check your email and password.";
+  }
+}
+
+function payclockSignOut(){
+  pcAuth.signOut();
+}
+
+pcAuth.onAuthStateChanged(async user=>{
+  const login=document.getElementById("syncLogin");
+
+  if(!user){
+    pcUser=null;
+    pcRemoteReady=false;
+    if(pcUnsubscribe){pcUnsubscribe();pcUnsubscribe=null;}
+    login.classList.remove("hidden");
+    document.getElementById("signOutButton").style.display="none";
+    document.getElementById("accountText").textContent="Sign in to sync PayClock and MoneyBoard.";
+    setSyncStatus(false);
+    return;
+  }
+
+  login.classList.add("hidden");
+
+  try{
+    await pcStartSync(user);
+  }catch(e){
+    console.error(e);
+    login.classList.remove("hidden");
+    document.getElementById("syncLoginMessage").textContent=
+      "Signed in, but cloud sync failed. Check Firestore rules and try again.";
+  }
+});
+
+
 /* SAVE */
 
 function saveData() {
@@ -517,6 +765,7 @@ function saveData() {
     "payclock_shifts",
     JSON.stringify(shifts)
   );
+  pcQueueCloudSave();
 }
 
 function saveSettingsData() {
@@ -524,6 +773,7 @@ function saveSettingsData() {
     "payclock_settings",
     JSON.stringify(settings)
   );
+  pcQueueCloudSave();
 }
 
 
@@ -726,6 +976,7 @@ function toggleClock() {
       "payclock_clocked_in",
       clockedInAt
     );
+    pcQueueCloudSave();
 
   } else {
 
@@ -744,6 +995,7 @@ function toggleClock() {
     localStorage.removeItem(
       "payclock_clocked_in"
     );
+    pcQueueCloudSave();
   }
 
   render();
@@ -1143,6 +1395,7 @@ function saveSettings() {
 function render() {
 
   const now = new Date();
+  if(pcUser && pcRemoteReady) pcSyncMoneyBoard(false);
 
   document.getElementById("subtitle")
     .textContent =
